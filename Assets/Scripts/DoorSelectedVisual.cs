@@ -43,4 +43,12 @@ public class DoorSelectedVisual : MonoBehaviour
             visualGameObject.SetActive(false);
         }
     }
+
+    private void OnDestroy()
+    {
+        if(Player.Instance != null)
+        {
+            Player.Instance.OnSelectedDoorChanged -= Player_OnSelectedDoorChanged;
+        }
+    }
 }

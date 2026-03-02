@@ -27,7 +27,10 @@ public class GameInput : MonoBehaviour
 
     private void Interact_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
     {
-        OnInteractAction?.Invoke(this, EventArgs.Empty);
+        if(Player.Instance != null)
+        {
+            OnInteractAction?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public Vector2 GetMovementVectorNormalized()
@@ -36,5 +39,14 @@ public class GameInput : MonoBehaviour
         inputVector = inputVector.normalized;
 
         return inputVector;
+    }
+
+    private void OnDestroy()
+    {
+        if (inputActions != null)
+        {
+            inputActions.Player.Interact.performed -= Interact_performed;
+            inputActions.Dispose();
+        }
     }
 }

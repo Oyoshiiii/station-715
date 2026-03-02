@@ -3569,8 +3569,16 @@ PrefabInstance:
       value: Door
       objectReference: {fileID: 0}
     - target: {fileID: 2973164487379656540, guid: 79b50bb4113df3543876aeb09c321e1a, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2973164487379656540, guid: 79b50bb4113df3543876aeb09c321e1a, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4923015512141106688, guid: 79b50bb4113df3543876aeb09c321e1a, type: 3}
+      propertyPath: nextScene
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5224668149360020666, guid: 79b50bb4113df3543876aeb09c321e1a, type: 3}
       propertyPath: visualGameObjects.Array.size
@@ -21516,9 +21524,6 @@ MonoBehaviour:
   gameInput: {fileID: 279534149}
   speed: 8
   rotationSpeed: 10
-  doorMask:
-    serializedVersion: 2
-    m_Bits: 64
 --- !u!136 &1819018549
 CapsuleCollider:
   m_ObjectHideFlags: 0

@@ -6,23 +6,26 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/LocationScenes/StartRoomScene.unity
+    path: Assets/Scenes/StartRoomScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
-    path: Assets/Scenes/LocationScenes/MainCoridorScene.unity
+    path: Assets/Scenes/MainCoridorScene.unity
     guid: fef3d48baeb32fb4781ea24b1b06aca4
   - enabled: 1
-    path: Assets/Scenes/LocationScenes/PantryScene.unity
+    path: Assets/Scenes/PantryScene.unity
     guid: e3a15ee757fab07478fd1065a00d169d
   - enabled: 1
-    path: Assets/Scenes/LocationScenes/MainLaboratoryScene.unity
+    path: Assets/Scenes/MainLaboratoryScene.unity
     guid: 189d1af0594dbb840b0fbb8f32c6c2d5
   - enabled: 1
-    path: Assets/Scenes/LocationScenes/ServiceRoomScene.unity
+    path: Assets/Scenes/ServiceRoomScene.unity
     guid: d1d3f4ae6cc2dfc488f6c937ca78f981
   - enabled: 1
-    path: Assets/Scenes/LocationScenes/LastRoomScene.unity
+    path: Assets/Scenes/LastRoomScene.unity
     guid: 7b393f8cc02c0394fa06efc69286a78a
+  - enabled: 1
+    path: Assets/Scenes/LoadingScene.unity
+    guid: 4c3be595e84d2104a877e7eeee27b6ba
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
