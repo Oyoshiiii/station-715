@@ -46,9 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 047e5eedc1a475a47a5a02952ae2961f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Door
-  nextScene: 0
-  state: 0
-  openAnimationTime: 1
+  nextSceneIndex: 0
 --- !u!65 &6615394838905390914
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -174,7 +172,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorAnimation
   door: {fileID: 4923015512141106688}
-  animator: {fileID: 0}
 --- !u!95 &6853361747298087051
 Animator:
   serializedVersion: 7
@@ -210,7 +207,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorSelectedVisual
   door: {fileID: 4923015512141106688}
-  visualGameObjects: []
+  visualGameObjects:
+  - {fileID: 7635516846221555338}
+  - {fileID: 7635516846221555340}
+--- !u!1 &7635516846221555338 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4972167997025983193, guid: 22d2c44fed4ffa743aac7afe4d993905, type: 3}
+  m_PrefabInstance: {fileID: 3239915996974640211}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7635516846221555340 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4972167997025983199, guid: 22d2c44fed4ffa743aac7afe4d993905, type: 3}
+  m_PrefabInstance: {fileID: 3239915996974640211}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7635516846221585060 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4972167997025879799, guid: 22d2c44fed4ffa743aac7afe4d993905, type: 3}
