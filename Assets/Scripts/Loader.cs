@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,23 +15,6 @@ public static class Loader
 
     private static Scene targetScene;
 
-    public static void Initialize()
-    {
-        if(Player.Instance != null)
-        {
-            Player.Instance.OnDoorOpened += Player_OnDoorPassed;
-        }
-    }
-
-    private static void Player_OnDoorPassed(object sender, System.EventArgs e)
-    {
-        Door door = (sender as Player)?.GetSelectedDoor();
-        if (door != null)
-        {
-            Load(door.GetScene());
-        }
-    }
-
     public static void Load(Scene targetScene)
     {
         Loader.targetScene = targetScene;
@@ -39,7 +23,7 @@ public static class Loader
 
     public static void LoaderCallback()
     {
-        Debug.Log("loading scene: " + targetScene.ToString());
+        Debug.Log("Loading scene: " + targetScene.ToString());
         SceneManager.LoadScene(targetScene.ToString());
     }
 }

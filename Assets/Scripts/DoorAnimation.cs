@@ -3,9 +3,9 @@ using UnityEngine;
 public class DoorAnimation : MonoBehaviour
 {
     [SerializeField] private Door door;
-    [SerializeField] private Animator animator;
+    private Animator animator;
 
-    private const string Open = "Open";
+    private const string OPEN = "Open";
 
     private void Awake()
     {
@@ -23,7 +23,7 @@ public class DoorAnimation : MonoBehaviour
 
     private void Door_OnOpen(object sender, System.EventArgs e)
     {
-        animator.SetTrigger(Open);
+        animator.SetTrigger(OPEN);
     }
 
     private void OnDestroy()

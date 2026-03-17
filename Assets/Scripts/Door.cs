@@ -12,12 +12,17 @@ public class Door : MonoBehaviour
 
     [SerializeField] private Loader.Scene nextScene;
     [SerializeField] private DoorState state = DoorState.Unlocked;
-    [SerializeField] private float openAnimationTime = 1f; 
+
+    [SerializeField] private float openAnimationTime = 1f;
+
+    [SerializeField] private KeyCardSO keyCardSO;
+
+    [SerializeField] private Fader fader;
 
     private Collider doorCollider;
 
     public bool IsOpened { get; private set; }
-    public bool IsTransitioning { get; private set; } 
+    public bool IsAnimate { get; private set; } 
 
     public event EventHandler OnOpen;
     public event EventHandler OnOpenAnimationComplete; 
@@ -29,7 +34,7 @@ public class Door : MonoBehaviour
 
     public void Interact(Player player)
     {
-        if (IsOpened || IsTransitioning)
+        if (IsOpened || IsAnimate)
         {
             return;
         }
@@ -50,7 +55,7 @@ public class Door : MonoBehaviour
 
     private void OpenDoor(Player player)
     {
-        IsTransitioning = true;
+        IsAnimate = true;
 
         if (doorCollider != null)
             doorCollider.enabled = false;
@@ -65,6 +70,13 @@ public class Door : MonoBehaviour
     {
         yield return new WaitForSeconds(openAnimationTime);
         OnOpenAnimationComplete?.Invoke(this, EventArgs.Empty);
+
+        if(fader != null)
+        {
+            yield return StartCoroutine(fader.FadeIn());
+        }
+
+        Loader.Load(nextScene);
     }
 
     public Loader.Scene GetScene()

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
@@ -22,8 +23,6 @@ public class Player : MonoBehaviour
         }
 
         Instance = this;
-        //вынести в GameManager
-        Loader.Initialize();
     }
 
     public event EventHandler<OnSelectedDoorChangedEventArgs> OnSelectedDoorChanged;
@@ -55,6 +54,7 @@ public class Player : MonoBehaviour
         {
             case PlayerState.Normal:
                 HandleMovement();
+                //HandleRotate();
                 HandleInteractions();
                 break;
 
@@ -115,6 +115,28 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void HandleRotate()
+    {
+
+        Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
+        Ray ray = Camera.main.ScreenPointToRay(mouseScreenPos);
+        Vector3 lookDir = transform.forward;
+
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            Vector3 targetDir = hit.point - transform.position;
+            targetDir.y = 0;
+
+            if (targetDir != Vector3.zero)
+            {
+                lookDir = targetDir.normalized;
+
+                Quaternion targetRotation = Quaternion.LookRotation(lookDir);
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
+        }
+    }
+
     private void HandleInteractions()
     {
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
@@ -133,7 +155,7 @@ public class Player : MonoBehaviour
             Debug.Log(raycastHit.transform);
             if (raycastHit.transform.TryGetComponent(out Door door))
             {
-                if (door != selectedDoor && !door.IsTransitioning)
+                if (door != selectedDoor && !door.IsAnimate)
                 {
                     SetSelectedDoor(door);
                 }
