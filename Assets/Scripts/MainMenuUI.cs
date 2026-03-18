@@ -6,19 +6,28 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button playBtn;
     [SerializeField] private Button quitBtn;
 
+    [SerializeField] private Fader fader;
+
     private void Awake()
     {
         playBtn.onClick.AddListener(() =>
         {
-            Loader.Load(Loader.Scene.StartRoomScene);
+            StartCoroutine(StartGame());
         });
 
-        //выход из игры
         quitBtn.onClick.AddListener(() =>
         {
             Application.Quit();
         });
+    }
 
-        Time.timeScale = 1f;
+    private System.Collections.IEnumerator StartGame()
+    {
+        if (fader != null)
+        {
+            yield return StartCoroutine(fader.FadeIn());
+        }
+
+        Loader.Load(Loader.Scene.StartRoomScene);
     }
 }

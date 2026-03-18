@@ -10,13 +10,13 @@ public class ItemSlot : MonoBehaviour
 
     private void Start()
     {
-        color = iconImage.color;
+        if(iconImage != null) { color = iconImage.color; }
     }
     
     public void SetItem(Item newItem)
     {
         Item = newItem;
-        if (newItem != null)
+        if (newItem != null && iconImage != null)
         {
             iconImage.sprite = newItem.icon;
             iconImage.enabled = true;
@@ -25,7 +25,7 @@ public class ItemSlot : MonoBehaviour
         else
         {
             iconImage.enabled = false;
-            color.a = 0;
+            //color.a = 0;
         }
     }
 }

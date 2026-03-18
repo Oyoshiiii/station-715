@@ -17,8 +17,8 @@ public class ItemsVisual : MonoBehaviour
     [SerializeField] private TMP_Text itemDescription;
 
     [Header("Settings")]
-    [SerializeField] private float scrollSpeed = 10f; // Скорость прокрутки
-    [SerializeField] private float snapThreshold = 20f; // Порог для привязки
+    [SerializeField] private float scrollSpeed = 10f; //скорость прокрутки
+    [SerializeField] private float snapThreshold = 20f; //порог для привязки
 
     private float itemHeight;
     private int totalItems;
@@ -40,7 +40,6 @@ public class ItemsVisual : MonoBehaviour
 
         totalItems = itemSlots.Count;
 
-        // Подписываемся на события GameInput
         if (GameInput.Instance != null)
         {
             GameInput.Instance.OnInventoryMoveItems += HandleInventoryMove;
@@ -55,7 +54,6 @@ public class ItemsVisual : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Отписываемся от событий
         if (GameInput.Instance != null)
         {
             GameInput.Instance.OnInventoryMoveItems -= HandleInventoryMove;
@@ -72,9 +70,8 @@ public class ItemsVisual : MonoBehaviour
     {
         if (!enabled) return;
 
-        Debug.Log($"HandleInventoryMove: {moveVector}"); // Для отладки
+        Debug.Log($"HandleInventoryMove: {moveVector}");
 
-        // Обрабатываем нажатия клавиш
         if (moveVector.y > 0) // W - движение вверх (к первому предмету)
         {
             MoveToPreviousItem();
@@ -85,10 +82,8 @@ public class ItemsVisual : MonoBehaviour
         }
     }
 
-    // Убираем обработку из Update, теперь используем событие
     private void Update()
     {
-        // Плавная прокрутка к целевой позиции
         if (isSnapping)
         {
             SmoothScrollToTarget();
@@ -97,13 +92,11 @@ public class ItemsVisual : MonoBehaviour
 
     private void OnInventoryOpened(object sender, System.EventArgs e)
     {
-        // Включаем обработку ввода для инвентаря
         enabled = true;
     }
 
     private void OnInventoryClosed(object sender, System.EventArgs e)
     {
-        // Выключаем обработку ввода для инвентаря
         enabled = false;
     }
 
@@ -111,7 +104,6 @@ public class ItemsVisual : MonoBehaviour
     {
         if (isSnapping) return;
 
-        // Переход к следующему предмету с закольцовыванием
         currentItemIndex = (currentItemIndex + 1) % totalItems;
         targetPosition = currentItemIndex * itemHeight;
         isSnapping = true;
@@ -123,7 +115,6 @@ public class ItemsVisual : MonoBehaviour
     {
         if (isSnapping) return;
 
-        // Переход к предыдущему предмету с закольцовыванием
         currentItemIndex--;
         if (currentItemIndex < 0)
         {
@@ -137,7 +128,6 @@ public class ItemsVisual : MonoBehaviour
 
     private void SmoothScrollToTarget()
     {
-        // Плавно перемещаемся к целевой позиции
         float currentY = -content.anchoredPosition.y;
         float newY = Mathf.Lerp(currentY, targetPosition, Time.deltaTime * scrollSpeed);
 
@@ -146,7 +136,6 @@ public class ItemsVisual : MonoBehaviour
             -newY
         );
 
-        // Проверяем, достигли ли цели
         if (Mathf.Abs(newY - targetPosition) < 0.1f)
         {
             content.anchoredPosition = new Vector2(
@@ -163,8 +152,6 @@ public class ItemsVisual : MonoBehaviour
 
     private void UpdateItemInfo(int index)
     {
-        // Здесь можно добавить логику обновления названия и описания предмета
-        // Например, получить данные из компонента предмета
         ItemSlot slot = itemSlots[index].GetComponent<ItemSlot>();
         if (slot != null && slot.Item != null)
         {
@@ -173,7 +160,6 @@ public class ItemsVisual : MonoBehaviour
         }
     }
 
-    // Метод для прямой установки индекса (если нужно)
     public void SetCurrentItem(int index)
     {
         if (index >= 0 && index < totalItems)

@@ -40,10 +40,9 @@ public class GameInput : MonoBehaviour
 
     private void MoveItems_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
     {
-        // Получаем вектор движения и вызываем событие
         Vector2 moveVector = obj.ReadValue<Vector2>();
         OnInventoryMoveItems?.Invoke(this, moveVector);
-        Debug.Log($"Move items performed: {moveVector}"); // Для отладки
+        Debug.Log($"Move items performed: {moveVector}");
     }
 
     private void Inventory_OnInventoryClosed(object sender, EventArgs e)
@@ -89,7 +88,7 @@ public class GameInput : MonoBehaviour
         if (inputActions != null)
         {
             inputActions.Player.Interact.performed -= Interact_performed;
-            inputActions.Inventory.MoveItems.performed -= MoveItems_performed; // Добавлено
+            inputActions.Inventory.MoveItems.performed -= MoveItems_performed;
             inputActions.Dispose();
         }
     }

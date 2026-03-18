@@ -50,6 +50,7 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
+        Debug.Log(Instance);
         switch (state)
         {
             case PlayerState.Normal:
@@ -157,13 +158,19 @@ public class Player : MonoBehaviour
             {
                 if (door != selectedDoor && !door.IsAnimate)
                 {
+                    Debug.Log("SetSelected Door");
                     SetSelectedDoor(door);
                 }
             }
-            else SetSelectedDoor(null);
+            else
+            {
+                Debug.Log("No Door");
+                SetSelectedDoor(null);
+            }
         }
         else
         {
+            Debug.Log("No Door");
             SetSelectedDoor(null);
         }
     }
@@ -196,6 +203,7 @@ public class Player : MonoBehaviour
         {
             selectedDoor = this.selectedDoor
         });
+
     }
 
     public Door GetSelectedDoor()

@@ -17,6 +17,8 @@ public class Door : MonoBehaviour
 
     [SerializeField] private KeyCardSO keyCardSO;
 
+    [SerializeField] private GameObject interactBtnUIInteracted;
+
     [SerializeField] private Fader fader;
 
     private Collider doorCollider;
@@ -30,10 +32,20 @@ public class Door : MonoBehaviour
     private void Awake()
     {
         doorCollider = GetComponent<Collider>();
+
+        if (interactBtnUIInteracted != null)
+        {
+            interactBtnUIInteracted.SetActive(false);
+        }
     }
 
     public void Interact(Player player)
     {
+        if(interactBtnUIInteracted != null)
+        {
+            interactBtnUIInteracted.SetActive(true);
+        }
+
         if (IsOpened || IsAnimate)
         {
             return;
