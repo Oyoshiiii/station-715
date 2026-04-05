@@ -1,6 +1,8 @@
-using System;
+п»їusing System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static UnityEngine.Rendering.DebugUI;
 
 public class Player : MonoBehaviour
 {
@@ -20,9 +22,20 @@ public class Player : MonoBehaviour
         if (Instance != null)
         {
             Debug.LogError("More than 1 player on the map!");
+            Destroy(gameObject);
         }
 
+        DontDestroyOnLoad(gameObject);
         Instance = this;
+
+        if (savedHealth >= 0f)
+        {
+            health = savedHealth;
+        }
+        else
+        {
+            health = healthMax; 
+        }
     }
 
     public event EventHandler<OnSelectedDoorChangedEventArgs> OnSelectedDoorChanged;
@@ -31,31 +44,97 @@ public class Player : MonoBehaviour
         public Door selectedDoor;
     }
 
+    public event EventHandler<OnSelectedTableChangedEventArgs> OnSelectedTableChanged;
+    public class OnSelectedTableChangedEventArgs : EventArgs
+    {
+        public Table selectedTable;
+    }
+
     public event EventHandler OnDoorOpened;
+
+    public event EventHandler OnPlayerDead;
 
     [SerializeField] private GameInput gameInput;
 
+    [SerializeField] private Inventory inventory;
+
     [SerializeField] private float speed = 10f;
+    [SerializeField] private float sprintSpeedCoefficient = 1.5f;
     [SerializeField] private float rotationSpeed = 10f;
 
+    [SerializeField] private float pushBackForce = 7f;
+    [SerializeField] private float pushBackDecayRate = 15f;
+
+    [SerializeField] private Transform weaponPoint;
+    [SerializeField] private GameObject weapon;
+
+    [SerializeField] private float healthMax = 100f;
+
+    private Vector3 pushBackVelocity;
+
+    private float health;
+    private static float savedHealth = -1f;
+
     private Vector3 lastInteractionDir;
+
     private Door selectedDoor;
+    private Table selectedTable;
+
+    private static Transform playerPointPosition;
+
+    private Vector2 lastMousePosition;
+    private bool mouseMoved;
+    private float mouseMoveThreshold = 0.01f;
 
     public bool IsWalking { get; private set; }
+    public bool IsSprinting { get; private set; }
+    public bool IsAiming { get; private set; } = false;
+
+    [SerializeField] private float playerRadius = 0.4f;
+    private float playerHeight = 1f;
+
+    //private Item item;
 
     private void Start()
     {
+        if (playerPointPosition != null)
+        {
+            transform.position = playerPointPosition.position;
+            transform.eulerAngles = playerPointPosition.eulerAngles;
+        }
+
         gameInput.OnInteractAction += GameInput_OnInteractAction;
+
+        gameInput.OnSprintActionCanceled += GameInput_OnSprintActionCanceled;
+        gameInput.OnSprintActionStarted += GameInput_OnSprintActionStarted;
+
+        Door.OnPlayerPoint += Door_OnPlayerPoint;
+
+        if (weapon != null && weaponPoint != null)
+        {
+            weapon.SetActive(true);
+
+            weapon.transform.parent = weaponPoint;
+            weapon.transform.localPosition = Vector3.zero;
+        }
+
+        lastMousePosition = Mouse.current.position.ReadValue();
+
+        Debug.Log($"HP РёРіСЂРѕРєР°: {health}");
     }
 
     private void Update()
     {
-        Debug.Log(Instance);
+        Vector2 currentMousePosition = Mouse.current.position.ReadValue();
+        mouseMoved = Vector2.Distance(currentMousePosition, lastMousePosition) > mouseMoveThreshold;
+        lastMousePosition = currentMousePosition;
+
         switch (state)
         {
             case PlayerState.Normal:
                 HandleMovement();
-                //HandleRotate();
+                if ((!IsWalking || !IsSprinting || IsAiming) && mouseMoved)
+                    HandleRotate();
                 HandleInteractions();
                 break;
 
@@ -69,11 +148,24 @@ public class Player : MonoBehaviour
 
     private void HandleMovement()
     {
+        if (pushBackVelocity.sqrMagnitude > 0.01f && !IsAiming)
+        {
+            Vector3 pushDir = new Vector3(pushBackVelocity.x, 0f, pushBackVelocity.z).normalized;
+            float pushDist = pushBackVelocity.magnitude * Time.deltaTime;
+
+            if (!Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight,
+                                      playerRadius, pushDir, pushDist))
+            {
+                transform.position += pushDir * pushDist;
+            }
+
+            pushBackVelocity = Vector3.Lerp(pushBackVelocity, Vector3.zero, pushBackDecayRate * Time.deltaTime);
+        }
+
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
         Vector3 moveDir = new Vector3(inputVector.x, 0, inputVector.y);
 
-        float playerRadius = 0.4f;
-        float playerHeight = 1f;
+        IsWalking = moveDir != Vector3.zero;
 
         float moveDist = speed * Time.deltaTime;
 
@@ -82,7 +174,7 @@ public class Player : MonoBehaviour
 
         if (!canMove)
         {
-            //пробуем двинуться по X
+            //РїСЂРѕР±СѓРµРј РґРІРёРЅСѓС‚СЊСЃСЏ РїРѕ X
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0);
             canMove = moveDir.x != 0 && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight,
                 playerRadius, moveDirX, moveDist);
@@ -93,7 +185,7 @@ public class Player : MonoBehaviour
             }
             else
             {
-                //пробуем двинуться по Z
+                //РїСЂРѕР±СѓРµРј РґРІРёРЅСѓС‚СЊСЃСЏ РїРѕ Z
                 Vector3 moveDirZ = new Vector3(0, 0, moveDir.z);
                 canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight,
                     playerRadius, moveDirZ, moveDist);
@@ -105,20 +197,27 @@ public class Player : MonoBehaviour
             }
         }
 
-        if (canMove)
+        if(canMove)
         {
-            transform.position += speed * moveDir * Time.deltaTime;
+            float speedModifier = IsSprinting ? sprintSpeedCoefficient : 1;
+            transform.position += speed * moveDir * Time.deltaTime * speedModifier;
+        }
+        else
+        {
+            HandleRotate();
         }
 
         if (moveDir != Vector3.zero)
         {
-            transform.forward = Vector3.Slerp(transform.forward, moveDir, rotationSpeed * Time.deltaTime);
+            if (!IsAiming)
+            {
+                transform.forward = Vector3.Slerp(transform.forward, moveDir, rotationSpeed * Time.deltaTime);
+            }
         }
     }
 
     private void HandleRotate()
     {
-
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Ray ray = Camera.main.ScreenPointToRay(mouseScreenPos);
         Vector3 lookDir = transform.forward;
@@ -127,15 +226,20 @@ public class Player : MonoBehaviour
         {
             Vector3 targetDir = hit.point - transform.position;
             targetDir.y = 0;
-
             if (targetDir != Vector3.zero)
-            {
                 lookDir = targetDir.normalized;
-
-                Quaternion targetRotation = Quaternion.LookRotation(lookDir);
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            }
         }
+        else
+        {
+            Vector3 farPoint = ray.GetPoint(100f);
+            Vector3 targetDir = farPoint - transform.position;
+            targetDir.y = 0;
+            if (targetDir != Vector3.zero)
+                lookDir = targetDir.normalized;
+        }
+
+        Quaternion targetRotation = Quaternion.LookRotation(lookDir);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
     }
 
     private void HandleInteractions()
@@ -148,30 +252,39 @@ public class Player : MonoBehaviour
             lastInteractionDir = moveDir;
         }
 
-        float interactionDist = 2f;
+        float interactionDist = 1.5f;
 
         if (Physics.Raycast(transform.position, lastInteractionDir, out RaycastHit raycastHit,
             interactionDist))
         {
-            Debug.Log(raycastHit.transform);
+            //Debug.Log(raycastHit.transform);
             if (raycastHit.transform.TryGetComponent(out Door door))
             {
                 if (door != selectedDoor && !door.IsAnimate)
                 {
-                    Debug.Log("SetSelected Door");
                     SetSelectedDoor(door);
                 }
             }
             else
             {
-                Debug.Log("No Door");
-                SetSelectedDoor(null);
+                if (raycastHit.transform.TryGetComponent(out Table table))
+                {
+                    if (table != selectedTable)
+                    {
+                        SetSelectedTable(table);
+                    }
+                }
+                else
+                {
+                    SetSelectedTable(null);
+                    SetSelectedDoor(null);
+                }
             }
         }
         else
         {
-            Debug.Log("No Door");
             SetSelectedDoor(null);
+            SetSelectedTable(null);
         }
     }
 
@@ -179,10 +292,40 @@ public class Player : MonoBehaviour
     {
         if (selectedDoor != null && state == PlayerState.Normal)
         {
-            state = PlayerState.OpenDoor;
-            selectedDoor.OnOpenAnimationComplete += Door_OnOpenAnimationComplete;
-            selectedDoor.Interact(this);
+            if(selectedDoor.State == Door.DoorState.Unlocked)
+            {
+                state = PlayerState.OpenDoor;
+
+                selectedDoor.OnOpenAnimationComplete += Door_OnOpenAnimationComplete;
+                selectedDoor.Interact();
+            }
+            else if (selectedDoor.State == Door.DoorState.NeedKeyCard)
+            {
+                selectedDoor.Interact(inventory.HasRightKeyCard(selectedDoor));
+            }
+            else
+            {
+                selectedDoor.Interact();
+            }
         }
+        else if(selectedTable != null)
+        {
+            selectedTable.Interact(this);
+        }
+    }
+
+    private void GameInput_OnSprintActionStarted(object sender, EventArgs e)
+    {
+        IsSprinting = true;
+    }
+    private void GameInput_OnSprintActionCanceled(object sender, EventArgs e)
+    {
+        IsSprinting = false;
+    }
+
+    private void Door_OnPlayerPoint(object sender, Door.OnPlayerPointEventArgs e)
+    {
+        playerPointPosition = e.playerPointTransform;
     }
 
     private void Door_OnOpenAnimationComplete(object sender, EventArgs e)
@@ -191,6 +334,9 @@ public class Player : MonoBehaviour
         if (door != null)
         {
             door.OnOpenAnimationComplete -= Door_OnOpenAnimationComplete;
+
+            SaveHealth();
+
             state = PlayerState.WaitingForLoad;
             OnDoorOpened?.Invoke(this, EventArgs.Empty);
         }
@@ -203,12 +349,63 @@ public class Player : MonoBehaviour
         {
             selectedDoor = this.selectedDoor
         });
-
     }
 
     public Door GetSelectedDoor()
     {
         return selectedDoor;
+    }
+    
+    private void SetSelectedTable(Table table)
+    {
+        this.selectedTable = table;
+        OnSelectedTableChanged?.Invoke(this, new OnSelectedTableChangedEventArgs
+        {
+            selectedTable = this.selectedTable
+        });
+    }
+
+    public Table GetSelectedTable()
+    {
+        return selectedTable;
+    }
+
+    public void SetItem(Item item)
+    {
+        inventory.SetItem(item);
+    }
+
+    public float GetHealth()
+    {
+        return health;
+    }
+
+    public void SaveHealth()
+    {
+        savedHealth = health;
+    }
+
+    public void SetAiming(bool aiming)
+    {
+        IsAiming = aiming;
+    }
+
+    public void TakeDamageFromEnemy(float dmg, Vector3 pushBackDir)
+    {
+        health -= dmg;
+
+        if (health <= 0)
+        {
+            health = 0f;
+            OnPlayerDead?.Invoke(this, EventArgs.Empty);
+            StartCoroutine(Die());
+            return;
+        }
+
+        if (pushBackDir != Vector3.zero)
+        {
+            pushBackVelocity = pushBackDir.normalized * pushBackForce;
+        }
     }
 
     private void OnDestroy()
@@ -217,5 +414,23 @@ public class Player : MonoBehaviour
         {
             selectedDoor.OnOpenAnimationComplete -= Door_OnOpenAnimationComplete;
         }
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    public IEnumerator Die()
+    {
+        savedHealth = -1f;
+
+        yield return new WaitForSeconds(1f);
+
+        gameInput.PlayerDead();
+
+        StopAllCoroutines();
+
+        transform.position = new Vector3(0, 0, -100);
     }
 }

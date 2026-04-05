@@ -4,44 +4,69 @@ public class DoorSelectedVisual : MonoBehaviour
 {
     [SerializeField] private Door door;
 
-    [SerializeField]
-    private GameObject[] visualGameObjects;
+    [SerializeField] private GameObject interactBtnUI;
+    [SerializeField] private GameObject openDoorBtnUI;
 
     private void Start()
     {
         Player.Instance.OnSelectedDoorChanged += Player_OnSelectedDoorChanged;
+        door.OnOpenDoorBtnShowCompleted += Door_OnOpenDoorBtnShowCompleted;
+
+        if (interactBtnUI != null)
+            Hide(interactBtnUI);
+
+        if (openDoorBtnUI != null)
+            Hide(openDoorBtnUI);
+    }
+
+    private void Door_OnOpenDoorBtnShowCompleted(object sender, System.EventArgs e)
+    {
+        Hide(openDoorBtnUI);
+
+        if(door.State == Door.DoorState.Unlocked)
+        {
+            Show(interactBtnUI);
+        }
     }
 
     private void Player_OnSelectedDoorChanged(object sender, Player.OnSelectedDoorChangedEventArgs e)
     {
+        if (door == null) return;
+
         if (door == e.selectedDoor && !door.IsOpened)
         {
-            Show();
+            if (door.State == Door.DoorState.NeedKeyCard)
+            {
+                Hide(interactBtnUI);
+                Show(openDoorBtnUI);
+            }
+
+            if (door.State == Door.DoorState.Unlocked)
+            {
+                Hide(openDoorBtnUI);
+                Show(interactBtnUI);
+            }
         }
         else if (door == e.selectedDoor && door.IsOpened)
         {
-            Hide();
+            Hide(interactBtnUI);
+            Hide(openDoorBtnUI);
         }
         else
         {
-            Hide();
+            Hide(interactBtnUI);
+            Hide(openDoorBtnUI);
         }
     }
 
-    private void Show()
+    private void Show(GameObject gameObject)
     {
-        foreach (var visualGameObject in visualGameObjects)
-        {
-            visualGameObject.SetActive(true);
-        }
+        gameObject.SetActive(true);
     }
 
-    private void Hide()
+    private void Hide(GameObject gameObject)
     {
-        foreach (var visualGameObject in visualGameObjects)
-        {
-            visualGameObject.SetActive(false);
-        }
+        gameObject.SetActive(false);
     }
 
     private void OnDestroy()

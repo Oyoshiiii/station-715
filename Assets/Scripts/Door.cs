@@ -7,57 +7,128 @@ public class Door : MonoBehaviour
     {
         Unlocked,
         NeedKeyCard,
-        Locked
+        Locked,
+        StartState
+    }
+
+    public enum DoorName
+    {
+        Default,
+
+        FromStartToCoridor,
+        FromCoridorToStart,
+
+        FromCoridorToPantry,
+        FromPantryToCoridor
     }
 
     [SerializeField] private Loader.Scene nextScene;
-    [SerializeField] private DoorState state = DoorState.Unlocked;
+
+    [SerializeField] private DoorState doorState;
+    [SerializeField] private DoorName nextDoorName = DoorName.FromStartToCoridor;
 
     [SerializeField] private float openAnimationTime = 1f;
+    [SerializeField] private float openDoorUIMessageTime = 3f;
 
-    [SerializeField] private KeyCardSO keyCardSO;
+    [SerializeField] private float showOpenDoorBtnTime = 0.5f;
+
+    [SerializeField] private ItemSO keyCardSO;
 
     [SerializeField] private GameObject interactBtnUIInteracted;
+    [SerializeField] private GameObject openDoorBtnUIInteracted;
+
+    [SerializeField] private GameObject doorUIMessage;
 
     [SerializeField] private Fader fader;
+
+    [SerializeField] private Transform playerPoint;
 
     private Collider doorCollider;
 
     public bool IsOpened { get; private set; }
     public bool IsAnimate { get; private set; } 
 
+    public DoorName NextDoorName { get { return nextDoorName; } private set { nextDoorName = value; } }
+    public DoorState State { get; private set; }
+    private static DoorState state = DoorState.StartState;
+
     public event EventHandler OnOpen;
-    public event EventHandler OnOpenAnimationComplete; 
+    public event EventHandler OnOpenAnimationComplete;
+
+    public event EventHandler OnOpenDoorBtnShowCompleted;
+
+    public static event EventHandler<OnPlayerPointEventArgs> OnPlayerPoint;
+    public class OnPlayerPointEventArgs : EventArgs
+    {
+        public Transform playerPointTransform;
+    }
 
     private void Awake()
     {
         doorCollider = GetComponent<Collider>();
 
+        if(state == DoorState.StartState)
+        {
+            state = doorState;
+            State = state;
+        }
+        else
+        {
+            State = state;
+            doorState = state;
+        }
+
+        NextDoorName = nextDoorName;
+
         if (interactBtnUIInteracted != null)
         {
             interactBtnUIInteracted.SetActive(false);
         }
-    }
-
-    public void Interact(Player player)
-    {
-        if(interactBtnUIInteracted != null)
+        if (openDoorBtnUIInteracted != null)
         {
-            interactBtnUIInteracted.SetActive(true);
+            openDoorBtnUIInteracted.SetActive(false);
         }
 
+        if (doorUIMessage != null)
+        {
+            doorUIMessage.SetActive(false);
+        }
+        else doorUIMessage = null;
+
+        if (nextDoorName == Loader.GetPlayerPointDoor())
+        {
+            OnPlayerPoint?.Invoke(this, new OnPlayerPointEventArgs
+            {
+                playerPointTransform = playerPoint
+            });
+        }
+    }
+
+    public void Interact(bool hasKeyCard = false)
+    {
         if (IsOpened || IsAnimate)
         {
             return;
         }
 
-        switch (state)
+        switch (State)
         {
             case DoorState.Unlocked:
-                OpenDoor(player);
+                if (interactBtnUIInteracted != null)
+                {
+                    interactBtnUIInteracted.SetActive(true);
+                }
+
+                OpenDoor();
                 break;
 
             case DoorState.NeedKeyCard:
+                if (interactBtnUIInteracted != null && hasKeyCard)
+                {
+                    openDoorBtnUIInteracted.SetActive(true);
+                }
+
+                TryUnlockDoor(hasKeyCard);
                 break;
 
             case DoorState.Locked:
@@ -65,7 +136,7 @@ public class Door : MonoBehaviour
         }
     }
 
-    private void OpenDoor(Player player)
+    private void OpenDoor()
     {
         IsAnimate = true;
 
@@ -78,6 +149,33 @@ public class Door : MonoBehaviour
         StartCoroutine(OpenAnimationCoroutine());
     }
 
+    private void TryUnlockDoor(bool hasKeyCard)
+    {
+        if (hasKeyCard)
+        {
+            StartCoroutine(ShowObjectCoroutine(openDoorBtnUIInteracted, showOpenDoorBtnTime));
+            SetDoorState(DoorState.Unlocked);
+        }
+        else
+        {
+            StartCoroutine(ShowObjectCoroutine(doorUIMessage, openDoorUIMessageTime));
+        }
+    }
+
+    private System.Collections.IEnumerator ShowObjectCoroutine(GameObject messageObject, float time)
+    {
+        if (messageObject == null) yield break;
+
+        messageObject.SetActive(true);
+        yield return new WaitForSeconds(time);
+
+        if (messageObject != null)
+        {
+            messageObject.SetActive(false);
+            OnOpenDoorBtnShowCompleted?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     private System.Collections.IEnumerator OpenAnimationCoroutine()
     {
         yield return new WaitForSeconds(openAnimationTime);
@@ -88,6 +186,8 @@ public class Door : MonoBehaviour
             yield return StartCoroutine(fader.FadeIn());
         }
 
+        state = State;
+
         Loader.Load(nextScene);
     }
 
@@ -96,8 +196,10 @@ public class Door : MonoBehaviour
         return nextScene;
     }
 
-    public void SetDoorState(DoorState state)
+    public void SetDoorState(DoorState newState)
     {
-        this.state = state;
+        state = newState;
+        State = state;
+        doorState = state;
     }
 }
